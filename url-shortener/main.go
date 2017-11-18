@@ -10,6 +10,10 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
+type shortenRequest struct {
+	URL string `form:"url"`
+}
+
 type shortenResponse struct {
 	OriginalURL string `json:"original_url"`
 	ShortID     string `json:"short_id"`
@@ -38,7 +42,7 @@ func main() {
 	// Set up routes
 	api := r.Group("/api")
 	{
-		api.POST("/shorten/:url", shortenEndpoint)
+		api.POST("/shorten", shortenEndpoint)
 	}
 	// Run HTTP server
 	if err := r.Run(":3000"); err != nil {
@@ -47,17 +51,26 @@ func main() {
 }
 
 func shortenEndpoint(c *gin.Context) {
-	url := c.Param("url")
+	// Bind requet params
+	var req shortenRequest
+	if err := c.Bind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	// Generate unique id
 	id := shortid.MustGenerate()
-
-	if err := links.Insert(link{URL: url, ID: id}); err != nil {
+	// Insert link
+	if err := links.Insert(link{URL: req.URL, ID: id}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
+	// Return short url
 	c.JSON(http.StatusOK, shortenResponse{
-		OriginalURL: url,
+		OriginalURL: req.URL,
 		ShortID:     id,
 		ShortURL:    fmt.Sprintf("%s/%s", c.Request.Host, id),
 	})
