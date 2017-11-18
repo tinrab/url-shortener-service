@@ -1,0 +1,16 @@
+version: '3.3'
+services:
+  url_shortener:
+    container_name: url-shortener
+    build: .
+    ports:
+    - 8080:3000
+    volumes:
+    - .:/go/src/app
+    depends_on:
+    - mongo
+  mongo:
+    image: mongo:3.5
+    container_name: mongo
+    ports:
+    - 27017:27017
