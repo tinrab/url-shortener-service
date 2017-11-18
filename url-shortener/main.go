@@ -44,6 +44,7 @@ func main() {
 	{
 		api.POST("/shorten", shortenEndpoint)
 	}
+	r.GET("/:id", redirectEndpoint)
 	// Run HTTP server
 	if err := r.Run(":3000"); err != nil {
 		log.Fatal(err)
@@ -74,4 +75,14 @@ func shortenEndpoint(c *gin.Context) {
 		ShortID:     id,
 		ShortURL:    fmt.Sprintf("%s/%s", c.Request.Host, id),
 	})
+}
+
+func redirectEndpoint(c *gin.Context) {
+	id := c.Param("id")
+	var result link
+	if err := links.FindId(id).One(&result); err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	c.Redirect(http.StatusPermanentRedirect, result.URL)
 }
